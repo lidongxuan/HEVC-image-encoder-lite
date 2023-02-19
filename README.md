@@ -3,7 +3,7 @@
 HEVC-image-encoder-lite
 ===========================
 
-A lightweight **H.265/HEVC** intra-frame encoder for **grayscale image encoder**. It is with only 2000 lines of C, which may be the most understandable HEVC implementation.
+A lightweight **H.265/HEVC** intra-frame encoder for **grayscale image compression**. It is with only 2000 lines of C, which may be the most understandable HEVC implementation.
 
 一个轻量级 **H.265/HEVC 帧内编码器**，用于进行**灰度图象压缩**。代码量仅为 2000 行 C 语言，易于理解。
 
@@ -17,12 +17,12 @@ A lightweight **H.265/HEVC** intra-frame encoder for **grayscale image encoder**
   * PGM 是一种非常简单的未压缩灰度图像格式。Windows 没有内置 PGM 文件查看器，可以使用 PhotoShop 或 WPS office 打开和查看 PGM 文件，或者使用[该网站](https://filext.com/online-file-viewer.html)在线查看。
 
 * **输出**：**H.265/HEVC 码流文件** （后缀为 .h265 或 .hevc）
-  * 可以使用 [File Viewer Plus](https://fileviewerplus.com/) 软件或 [Elecard HEVC Analyzer](https://elecard-hevc-analyzer.software.informer.com/) 来查看。
+  * 可以使用 [File Viewer Plus](https://fileviewerplus.com/) 软件或 [Elecard HEVC Analyzer](https://elecard-hevc-analyzer.software.informer.com/) 软件来查看。
 
 * 质量参数可取 0~4 ，对应 HEVC 的量化参数 (Quantize Parameter, QP) 的 4, 10, 16, 22, 28 。越大则压缩率越高，质量越差。
 * HEVC的实现代码 ([src/HEVCe.c](./src/HEVCe.c)) **具有极高可移植性**：
   * 只使用两种数据类型： 8-bit 无符号数 (unsigned char) 和 32-bit 有符号数 (int) ；
-  * **无依赖**：不调用任何头文件；
+  * 不调用任何头文件；
   * 不使用动态内存。
 
 　
@@ -41,13 +41,13 @@ A lightweight **H.265/HEVC** intra-frame encoder for **grayscale image encoder**
 
 ```c
 int HEVCImageEncoder (           // return:    -1:出错    positive value:成功，返回输出的 HEVC 码流的长度（单位：字节）
-unsigned char *pbuffer,          // 输出的 HEVC 码流将会存在这里
-unsigned char *img,              // 图象的原始像素需要在这里输入，每个像素占8-bit（也即一个 unsigned char），按先左后右，先上后下的顺序。
-unsigned char *img_rcon,         // 重构后的图象（也即压缩再解压）的像素会存在这里，每个像素占8-bit（也即一个 unsigned char），按先左后右，先上后下的顺序。注意：即使你不关心重构后的图象，也要在这里传入一个和输入图象同样大小的数组空间，否则 HEVC image encoder 不会正常工作。
-          int *ysz,              // 输入图象高度。对于不是32的倍数的值，会截断为32的倍数，因此这里是指针，函数内部会会修改该值。
-          int *xsz,              // 输入图象宽度。对于不是32的倍数的值，会截断为32的倍数，因此这里是指针，函数内部会会修改该值。
-    const int  qpd6,             // 质量参数，可取 0~4 ，对应 HEVC 的量化参数 (Quantize Parameter, QP) 的 4, 10, 16, 22, 28 。越大则压缩率越高，质量越差。
-    const int  pmode_cand        // 可取 1~35. 越大则压缩率越高，但性能也越差。推荐取值=7
+    unsigned char *pbuffer,      // 输出的 HEVC 码流将会存在这里
+    unsigned char *img,          // 图象的原始像素需要在这里输入，每个像素占8-bit（也即一个 unsigned char），按先左后右，先上后下的顺序。
+    unsigned char *img_rcon,     // 重构后的图象（也即压缩再解压）的像素会存在这里，每个像素占8-bit（也即一个 unsigned char），按先左后右，先上后下的顺序。注意：即使你不关心重构后的图象，也要在这里传入一个和输入图象同样大小的数组空间，否则 HEVC image encoder 不会正常工作。
+              int *ysz,          // 输入图象高度。对于不是32的倍数的值，会截断为32的倍数，因此这里是指针，函数内部会修改该值。
+              int *xsz,          // 输入图象宽度。对于不是32的倍数的值，会截断为32的倍数，因此这里是指针，函数内部会修改该值。
+        const int  qpd6,         // 质量参数，可取 0~4 ，对应 HEVC 的量化参数 (Quantize Parameter, QP) 的 4, 10, 16, 22, 28 。越大则压缩率越高，质量越差。
+        const int  pmode_cand    // 可取 1~35. 越大则压缩率越高，但性能也越差。推荐取值 4~10
 );
 ```
 
@@ -66,7 +66,7 @@ unsigned char *img_rcon,         // 重构后的图象（也即压缩再解压�
 运行命令：
 
 ```bash
-sh ./build_gcc.sh
+gcc src/*.c -o HEVCe
 ```
 
 在这里，我已用 gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0 将其编译好，可执行文件为 [HEVCe](./HEVCe)
@@ -87,7 +87,7 @@ Linux 下的命令格式 ：
 ./HEVCe  <input-image-file(.pgm)>  <output-file(.hevc/.h265)>  [<质量参数(0~4)>]
 ```
 
-我在 [testimage](./testimage) 目录里提供了 5 张 PGM 图象文件供测试。例如，你可以用命令：
+我在 [testimage](./testimage) 目录里提供了 5 张 PGM 图象文件供测试。例如在Windows下，你可以用命令：
 
 ```bash
 HEVCe testimage/1.pgm 1.hevc
