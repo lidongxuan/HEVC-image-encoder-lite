@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 # Python3
 
-
-
-
 # python standard libraries importation
 import sys
 import os
@@ -12,17 +9,10 @@ import subprocess as sp
 from time import sleep
 from random import randint
 
-
 # python third-party libraries importation (additional installation is required, if you do not have)
 import numpy as np
 from PIL import Image                                             # if there are any error, such as "jpeg2000 is not supported", please use command "pip install --upgrade Pillow" to upgrade Pillow library
 from skimage.metrics import structural_similarity as SSIM
-
-
-
-
-TMP_HEVC_INPUT_FNAME   = 'tmp_hevc_input_file_%d.pgm' % randint(0, 9999999999999999)
-TMP_HEVC_RCON_FNAME    = 'tmp_hevc_rcon_file_%d.pgm'  % randint(0, 9999999999999999)
 
 
 
@@ -64,27 +54,26 @@ def readImageAsMonochrome(file_name) :
 
 
 
-def callHEVCImageEncoder(img, out_fname, qpd6, pmode_cand) :
+def callHEVCImageEncoder(img, out_fname, qpd6) :
     Image.fromarray(img).save(TMP_HEVC_INPUT_FNAME)                           # save as pgm file, for HEVC encoder's input
-    sleep(1)
+    sleep(2)
     
     EXE_FILE = 'HEVCe'                                                        # HEVCencoder executable file name
     
     if   platform.system().lower() != 'windows' :                             # linux or macOS (not windows)
         EXE_FILE = './' + EXE_FILE
     
-    #COMMAND_LINE = '%s %s %s %s %d %d' % (EXE_FILE, TMP_HEVC_INPUT_FNAME, out_fname, TMP_HEVC_RCON_FNAME, qpd6, pmode_cand)
-    COMMANDS = [ EXE_FILE, TMP_HEVC_INPUT_FNAME, out_fname, TMP_HEVC_RCON_FNAME, str(qpd6), str(pmode_cand) ]
+    COMMANDS = [ EXE_FILE, TMP_HEVC_INPUT_FNAME, out_fname, TMP_HEVC_RCON_FNAME, str(qpd6) ]      # construct command line
     
     p = sp.Popen(COMMANDS, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)     # call the HEVCencoder executable file
     
     if p.wait() != 0 :
         print('run HEVC encoder failed')
         exit(-1)
-    sleep(1)
+    sleep(2)
     
     img_rcon = readImageAsMonochrome(TMP_HEVC_RCON_FNAME)
-    sleep(1)
+    sleep(2)
     
     os.remove(TMP_HEVC_INPUT_FNAME)
     os.remove(TMP_HEVC_RCON_FNAME)
@@ -122,7 +111,7 @@ comparison_list = [     # HEVC will compare to these image formats #############
 
 USAGE_STRING = '''
     Usage:
-        python  %s  <input-dir>  <output-dir>  [<qpd6>]   [<pmode_cand>]
+        python  %s  <input-dir>  <output-dir>  [<qpd6>]
 ''' % sys.argv[0]
 
 
@@ -130,37 +119,25 @@ USAGE_STRING = '''
 if __name__ == '__main__' : 
     
     # parse command line args #########################################################################################################################
-    in_dirname  = ''
-    out_dirname = ''
-    qpd6        = -1
-    pmode_cand  = 7
-    
-    for arg in sys.argv[1:] :
-        try :
-            arg_int = int(arg)
-            if qpd6 < 0 :
-                qpd6 = arg_int
-            else :
-                pmode_cand = arg_int
-        except:
-            if in_dirname == '' :
-                in_dirname  = arg
-            else :
-                out_dirname = arg
-    
-    if  in_dirname == ''  or  out_dirname == ''  or  in_dirname == out_dirname :
+    try :
+        in_dirname, out_dirname = sys.argv[1:3]
+        assert in_dirname != out_dirname
+    except :
         print(USAGE_STRING)
         exit(-1)
     
-    if qpd6 < 0 :
-        qpd6 = 3
+    qpd6 = 3
+
+    try :
+        qpd6 = int(sys.argv[3])
+    except :
+        pass
     
     print()
     print('|-arguments --------------------------------------')
     print('|   input  dir     = %s' % in_dirname)
     print('|   output dir     = %s' % out_dirname)
     print('|   Qp%%6           = %d        (Qp = %d)' % (qpd6, qpd6*6+4) )
-    print('|   pmode_cand     = %d' % pmode_cand )
     print('|-------------------------------------------------')
     print()
     
@@ -169,7 +146,10 @@ if __name__ == '__main__' :
         print('mkdir %s' % out_dirname)
         print()
         os.mkdir(out_dirname)
-    
+
+
+    TMP_HEVC_INPUT_FNAME   = out_dirname + os.path.sep + 'tmp_hevc_input_file_%d.pgm' % randint(0, 9999999999999999)
+    TMP_HEVC_RCON_FNAME    = out_dirname + os.path.sep + 'tmp_hevc_rcon_file_%d.pgm'  % randint(0, 9999999999999999)
     
     
     hevc_bpp_list = []
@@ -201,7 +181,7 @@ if __name__ == '__main__' :
         
         out_fname_hevc = out_fname_without_suffix + '.h265'
         
-        img_rcon = callHEVCImageEncoder(img, out_fname_hevc, qpd6, pmode_cand)
+        img_rcon = callHEVCImageEncoder(img, out_fname_hevc, qpd6)
         
         hevc_size = os.path.getsize(out_fname_hevc)
         hevc_bpp  = (8.0*hevc_size) / (xsz*ysz)
@@ -223,7 +203,7 @@ if __name__ == '__main__' :
                 quality = (quality_upper + quality_lower) // 2
                 
                 saveImageAsFormat(img, out_fname, quality)                                     # save to a file as the comparison image format
-                sleep(1)
+                sleep(2)
                 
                 out_img  = readImageAsMonochrome(out_fname)                                    # read the saved file
                 out_ssim = SSIM(img, out_img, data_range=256.0)                                # calculate its SSIM
@@ -240,6 +220,8 @@ if __name__ == '__main__' :
             
             _, out_ssim, out_size, quality = info_list[0]                                      # the first item in the sorted info_list (info_list[0]) has the nearest SSIM to HEVC's SSIM
             
+            saveImageAsFormat(img, out_fname, quality)                                         # finally save to a file as the comparison image format
+
             out_bpp = (8.0*out_size) / (xsz*ysz)
             
             comparison_bpp_lists[i_format].append(out_bpp)
@@ -260,11 +242,4 @@ if __name__ == '__main__' :
     for i_format, (format_name, _, _, _)  in  enumerate(comparison_list) :
         print(format_name)
         print(comparison_bpp_lists[i_format])
-
-
-
-
-
-
-
 
