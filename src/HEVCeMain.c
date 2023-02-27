@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <math.h>
+#include <math.h>                                              // we only use function log10 in <math.h> to calculate PSNR (dB)
 
 #include "HEVCe.h"                                             // contains a function (HEVCImageEncoder), for compressing a image to HEVC stream.
 
